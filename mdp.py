@@ -9,7 +9,7 @@ import markdown
 from tkinterweb import HtmlFrame
 
 
-def render_markdown(html_frame, filepath):
+def render_markdown(html_frame, header_label, filepath):
     """Read a markdown file and render it as HTML."""
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
@@ -19,7 +19,7 @@ def render_markdown(html_frame, filepath):
         return False
 
     if not text.strip():
-        html_frame.load_html("<p style='color:#888;'><em>Empty file</em></p>")
+        html_frame.load_html("<p style='color:#aaa;'><em>Empty file</em></p>")
     else:
         html_content = markdown.markdown(
             text,
@@ -33,31 +33,32 @@ body {{
     font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
     line-height: 1.6;
-    color: #1a1a1a;
-    padding: 20px 30px;
-    max-width: 860px;
+    color: #333;
+    padding: 12px 28px;
+    max-width: 800px;
     margin: 0 auto;
 }}
 h1, h2, h3, h4, h5, h6 {{
-    margin-top: 24px;
-    margin-bottom: 12px;
-    font-weight: 600;
-    color: #222;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
 }}
-h1 {{ font-size: 28px; border-bottom: 1px solid #ddd; padding-bottom: 8px; }}
-h2 {{ font-size: 22px; border-bottom: 1px solid #eee; padding-bottom: 6px; }}
-h3 {{ font-size: 18px; }}
+h1 {{ font-size: 24px; }}
+h2 {{ font-size: 20px; }}
+h3 {{ font-size: 16px; }}
 code {{
-    background-color: #f4f4f4;
-    padding: 2px 6px;
-    border-radius: 3px;
+    background-color: #f8f8f8;
+    padding: 2px 5px;
+    border-radius: 2px;
     font-family: 'Consolas', 'Courier New', monospace;
     font-size: 13px;
+    color: #555;
 }}
 pre {{
-    background-color: #f4f4f4;
-    padding: 12px 16px;
-    border-radius: 4px;
+    background-color: #f8f8f8;
+    padding: 10px 14px;
+    border-radius: 3px;
     overflow-x: auto;
 }}
 pre code {{
@@ -65,25 +66,24 @@ pre code {{
     padding: 0;
 }}
 blockquote {{
-    border-left: 4px solid #ccc;
+    border-left: 3px solid #e0e0e0;
     margin-left: 0;
-    padding-left: 16px;
-    color: #555;
+    padding-left: 14px;
+    color: #777;
 }}
 table {{
     border-collapse: collapse;
     width: 100%;
 }}
 th, td {{
-    border: 1px solid #ddd;
-    padding: 8px 12px;
+    border: 1px solid #eee;
+    padding: 6px 10px;
     text-align: left;
 }}
-th {{ background-color: #f2f2f2; }}
+th {{ background-color: #fafafa; font-weight: 500; }}
 img {{ max-width: 100%; }}
-a {{ color: #0366d6; text-decoration: none; }}
-a:hover {{ text-decoration: underline; }}
-ul, ol {{ padding-left: 24px; }}
+a {{ color: #555; text-decoration: underline; }}
+ul, ol {{ padding-left: 20px; }}
 </style>
 </head>
 <body>
@@ -91,16 +91,19 @@ ul, ol {{ padding-left: 24px; }}
 </body>
 </html>"""
         html_frame.load_html(styled_html)
+
+    filename = os.path.basename(filepath)
+    header_label.config(text=filename)
     return True
 
 
-def open_file(root, html_frame):
+def open_file(root, html_frame, header_label):
     """Open a markdown file via dialog."""
     filepath = filedialog.askopenfilename(
         title="Open Markdown File",
         filetypes=[("Markdown files", "*.md"), ("All files", "*.*")]
     )
-    if filepath and render_markdown(html_frame, filepath):
+    if filepath and render_markdown(html_frame, header_label, filepath):
         root.title(f"mdp - {os.path.basename(filepath)}")
 
 
@@ -109,35 +112,40 @@ def main():
     root.title("mdp")
     root.geometry("900x650")
     root.minsize(400, 300)
+    root.configure(bg='#fff')
 
-    root.grid_rowconfigure(0, weight=1)
+    root.grid_rowconfigure(1, weight=1)
     root.grid_columnconfigure(0, weight=1)
 
+    header = tk.Frame(root, bg='#fff', height=32)
+    header.grid(row=0, column=0, sticky="ew")
+    header.grid_propagate(False)
+
+    header_label = tk.Label(
+        header,
+        text="No file open",
+        bg='#fff',
+        fg='#aaa',
+        font=('Segoe UI', 11),
+        anchor='w',
+        padx=16
+    )
+    header_label.pack(fill='both', expand=True)
+
     html_frame = HtmlFrame(root, messages_enabled=False)
-    html_frame.grid(row=0, column=0, sticky="nsew")
+    html_frame.grid(row=1, column=0, sticky="nsew")
     html_frame.load_html(
-        "<p style='color:#888; text-align:center; padding-top:40px;'>"
-        "File &gt; Open to read a markdown file</p>"
+        "<p style='color:#aaa; text-align:center; padding-top:40px;'>"
+        "Ctrl+O to open a markdown file</p>"
     )
 
-    menubar = tk.Menu(root)
-    file_menu = tk.Menu(menubar, tearoff=0)
-    file_menu.add_command(
-        label="Open...",
-        command=lambda: open_file(root, html_frame),
-        accelerator="Ctrl+O"
-    )
-    file_menu.add_separator()
-    file_menu.add_command(label="Exit", command=root.quit)
-    menubar.add_cascade(label="File", menu=file_menu)
-    root.config(menu=menubar)
-
-    root.bind("<Control-o>", lambda e: open_file(root, html_frame))
+    root.bind("<Control-o>", lambda e: open_file(root, html_frame, header_label))
+    root.bind("<Escape>", lambda e: root.quit())
 
     if len(sys.argv) > 1:
         filepath = sys.argv[1]
         if os.path.isfile(filepath):
-            render_markdown(html_frame, filepath)
+            render_markdown(html_frame, header_label, filepath)
             root.title(f"mdp - {os.path.basename(filepath)}")
         else:
             messagebox.showerror("Error", f"File not found:\n{filepath}")
